@@ -17,9 +17,20 @@ public class SimpleRWorker implements RWorker {
 	
 	private final SessionConsumer sessionConsumer;
 	
+	public SimpleRWorker(SessionConsumer sessionConsumer) {
+		this(sessionConsumer, () -> {});
+	}
+	
+	private final CloseHook close;
+	
 	@FunctionalInterface
 	public static interface SessionConsumer {
 		void runWithinSession(Rsession session) throws Throwable;
+	}
+	
+	@FunctionalInterface
+	public static interface CloseHook {
+		void close() throws Exception;
 	}
 	
 	@Override
@@ -36,16 +47,24 @@ public class SimpleRWorker implements RWorker {
 		}
 	}
 
+	@Override
 	public boolean isStarted() {
 		return isStarted.get();
 	}
-	
+
+	@Override
 	public boolean isFinished() {
 		return isFinished.get();
 	}
 
+	@Override
 	public boolean anyErrors() {
 		return anyErrors.get();
+	}
+
+	@Override
+	public void close() throws Exception {
+		close.close();
 	}
 	
 }

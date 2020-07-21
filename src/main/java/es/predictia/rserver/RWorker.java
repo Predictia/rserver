@@ -2,7 +2,7 @@ package es.predictia.rserver;
 
 import java.util.concurrent.Future;
 
-public interface RWorker {
+public interface RWorker extends AutoCloseable {
 
 	public void run(Rsession session) throws Throwable;
 	

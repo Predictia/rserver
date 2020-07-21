@@ -11,46 +11,53 @@ public class RWorkerTest {
 	
 	@Test(expected=ExecutionException.class)
 	public void testClosingRWorker() throws Exception{
-		var failingWorker = new SimpleRWorker(session -> {throw new RuntimeException(); });
-		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		try(var failingWorker = new SimpleRWorker(session -> {throw new RuntimeException(); })){
+			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		}
 	}
 		
 	@Test(expected=ExecutionException.class)
 	public void testFailingRWorker() throws Exception{
-		var failingWorker = new SimpleRWorker(session -> session.eval("save()"));
-		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		try(var failingWorker = new SimpleRWorker(session -> session.eval("save()"))){
+			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		}
 	}
 	
 	@Test
 	public void testSourceRWorker() throws Exception{
-		var scriptWorker = RScript.builder()
+		try(var scriptWorker = RScript.builder()
 			.line("sessionInfo()")
 			.build()
-			.toWorker();
-		scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
-		Assert.assertFalse(scriptWorker.anyErrors());
-		Assert.assertTrue(scriptWorker.isFinished());
+			.toWorker()){
+			scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			Assert.assertFalse(scriptWorker.anyErrors());
+			Assert.assertTrue(scriptWorker.isFinished());
+		}
+		
 	}
 	
 	@Test(expected=ExecutionException.class)
 	public void testFailingSourceWorker() throws Exception{
-		var scriptWorker = RScript.builder()
-			.line("save()")
-			.build()
-			.toWorker();
-		scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		try(var scriptWorker = RScript.builder()
+				.line("save()")
+				.build()
+				.toWorker()){
+			scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		}
 	}
 
 	@Test
 	public void testLoadPackageRWorker() throws Exception{
-		var failingWorker = new SimpleRWorker(session -> session.loadPackage("devtools"));
-		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("devtools"))){
+			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		}
 	}
 	
 	@Test(expected=ExecutionException.class)
 	public void testFailingLoadPackageRWorker() throws Exception{
-		var failingWorker = new SimpleRWorker(session -> session.loadPackage("aaklsgjalfjalsf"));
-		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("aaklsgjalfjalsf"))){
+			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+		}
 	}
 	
 }

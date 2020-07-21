@@ -38,16 +38,11 @@ public class RScript {
 	 */
 	public RWorker toWorker() throws IOException {
 		var scriptFile = File.createTempFile("script-", ".R");
-		writeToFile(scriptFile);
+		Files.write(scriptFile.toPath(), getLines(), StandardCharsets.UTF_8);
 		return new SimpleRWorker(s -> {
 			s.source(scriptFile);
 			s.removeFile(scriptFile.getName());
-			scriptFile.delete();
-		});
-	}
-	
-	private void writeToFile(File scriptFile) throws IOException {
-		Files.write(scriptFile.toPath(), lines, StandardCharsets.UTF_8);
+		}, () -> scriptFile.delete());
 	}
 	
 }

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class Timeouts {
 
+	@FunctionalInterface
 	public interface AwakeningCondition{
 		public boolean wakeUp() throws Exception;
 	}

@@ -33,16 +33,11 @@ class RWorkers {
 	static void wait(long time, TimeUnit unit, final SimpleRWorker... workers) throws InterruptedException, ExecutionException{
 		if(workers == null) return;
 		if(allFinished(workers)) return;
-		Timeouts.sleepWithTimeOut(1000, new Timeouts.AwakeningCondition() {
-			@Override
-			public boolean wakeUp() throws Exception {
-				return allFinished(workers);
-			}
-		}, time, unit);
+		Timeouts.sleepWithTimeOut(1000, () -> allFinished(workers), time, unit);
 	}
 	
-	private static boolean allFinished(SimpleRWorker... workers){
-		for(SimpleRWorker worker : workers){
+	private static boolean allFinished(RWorker... workers){
+		for(var worker : workers){
 			if(!worker.isFinished()){
 				return false;
 			}
