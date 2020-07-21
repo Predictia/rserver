@@ -1,22 +1,20 @@
 package es.predictia.rserver;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.Interval;
 import org.rosuda.REngine.Rserve.RserveException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Stopwatch;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 class SessionTasks {
 	
 	private final RSessionRequest sessionRequest;
@@ -33,7 +31,7 @@ class SessionTasks {
 			@Override
 			public Rsession call() throws Exception {
 				boolean first = true;
-				Optional<RServerInstance> availableInstance = Optional.absent();
+				Optional<RServerInstance> availableInstance = Optional.empty();
 				Stopwatch stopwatch = Stopwatch.createStarted();
 				while(!availableInstance.isPresent()){
 					if(!first){
@@ -49,9 +47,7 @@ class SessionTasks {
 				return s;
 			}
 		});
-		this.workerFuture = new FutureTask<RWorker>(new Callable<RWorker>() {
-			@Override
-			public RWorker call() throws Exception {
+		this.workerFuture = new FutureTask<RWorker>(() -> {
 				while(!sessionFuture.isDone()){
 					Thread.sleep(POLL_INTERVAL);
 				}
@@ -62,8 +58,7 @@ class SessionTasks {
 					throw new RuntimeException(e);
 				}
 				return worker;
-			}
-		});
+			});
 	}
 
 	private Rsession createRsession(RSessionRequest sessionRequest) throws RserveException{
@@ -95,29 +90,29 @@ class SessionTasks {
 		}
 		Long reqTime = sessionRequest.getRequestedTime();
 		TimeUnit reqTimeUnit = sessionRequest.getRequestedTimeUnit();
-		Duration jobDuration = new Interval(sessionRequest.getAcceptedTime(), new DateTime()).toDuration();
-		if(jobDuration.isLongerThan(Duration.standardSeconds(TimeUnit.SECONDS.convert(reqTime, reqTimeUnit)))){
-			LOGGER.debug("Session: " + sessionRequest + " exhausted its time");
+		Duration jobDuration = Duration.between(sessionRequest.getAcceptedTime(), LocalDateTime.now());
+		if(jobDuration.toSeconds() > TimeUnit.SECONDS.convert(reqTime, reqTimeUnit)){
+			log.debug("Session: " + sessionRequest + " exhausted its time");
 			oSession.get().close();
 			workerFuture.cancel(true);
 			return true;
 		}else{
-			LOGGER.debug("Session: {} still in time: {}", sessionRequest, jobDuration);
+			log.debug("Session: {} still in time: {}", sessionRequest, jobDuration);
 			return false;
 		}
 	}
 	
 	private Optional<Rsession> getRSession(){
 		if(sessionFuture == null){
-			return Optional.absent();
+			return Optional.empty();
 		}else if(!sessionFuture.isDone()){
-			return Optional.absent();
+			return Optional.empty();
 		}
 		try{
 			return Optional.of(sessionFuture.get());
 		}catch(Exception e){
-			LOGGER.debug("Session {} could not be created", sessionRequest);
-			return Optional.absent();
+			log.debug("Session {} could not be created", sessionRequest);
+			return Optional.empty();
 		}
 	}
 	
@@ -130,11 +125,11 @@ class SessionTasks {
 		if(rsession.getConnection() != null){
 			boolean result = rsession.getConnection().isConnected();
 			if(!result){
-				LOGGER.debug("Session {} is not connected", sessionRequest);
+				log.debug("Session {} is not connected", sessionRequest);
 			}
 			return result;
 		}else{
-			LOGGER.debug("Session {} has no connection attached", sessionRequest);
+			log.debug("Session {} has no connection attached", sessionRequest);
 			return false;
 		}
 	}
@@ -153,12 +148,7 @@ class SessionTasks {
 	}
 	
 	public static Predicate<SessionTasks> predicateForRequest(final RSessionRequest rSessionRequest){
-		return new Predicate<SessionTasks>() {
-			@Override
-			public boolean apply(SessionTasks input) {
-				return input.getSessionRequest().equals(rSessionRequest);
-			}
-		};
+		return input -> input.getSessionRequest().equals(rSessionRequest);
 	}
 	
 	public static final Function<SessionTasks, RSessionRequest> TO_REQUEST_FUNCTION = new Function<SessionTasks, RSessionRequest>() {
@@ -168,15 +158,8 @@ class SessionTasks {
 		}
 	};
 	
-	public static final Predicate<SessionTasks> DONE_PREDICATE = new Predicate<SessionTasks>() {
-		@Override
-		public boolean apply(SessionTasks input) {
-			return input.isDone();
-		}
-	};
+	public static final Predicate<SessionTasks> DONE_PREDICATE = input -> input.isDone();
 	
 	private static final long POLL_INTERVAL = 5000l;
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SessionTasks.class);
 	
 }

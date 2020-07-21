@@ -3,24 +3,18 @@ package es.predictia.rserver;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
 public class RServerInstance {
 
-	private String url = "R://localhost";
+	@Builder.Default
+	private final String url = "R://localhost";
 	
-	private Integer resources = 1;
-
-	public String getUrl() {
-		return url;
-	}
-	public void setUrl(String url) {
-		this.url = url;
-	}
-	public Integer getResources() {
-		return resources;
-	}
-	public void setResources(Integer resources) {
-		this.resources = resources;
-	}
+	@Builder.Default
+	private final Integer resources = 1;
 	
 	static RConnection connect(RServerInstance instance) throws RserveException {
 		String hostPort = hostPort(instance);

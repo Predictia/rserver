@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
  * @author Max
  *
  */
-public class RWorkers {
+class RWorkers {
 
 	/** Runs {@link RWorker} worker within session using a {@link RSessionRequest#createDefaultRequest()}
 	 */
@@ -30,7 +30,7 @@ public class RWorkers {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	static void wait(long time, TimeUnit unit, final AbstractRWorker... workers) throws InterruptedException, ExecutionException{
+	static void wait(long time, TimeUnit unit, final SimpleRWorker... workers) throws InterruptedException, ExecutionException{
 		if(workers == null) return;
 		if(allFinished(workers)) return;
 		Timeouts.sleepWithTimeOut(1000, new Timeouts.AwakeningCondition() {
@@ -41,8 +41,8 @@ public class RWorkers {
 		}, time, unit);
 	}
 	
-	private static boolean allFinished(AbstractRWorker... workers){
-		for(AbstractRWorker worker : workers){
+	private static boolean allFinished(SimpleRWorker... workers){
+		for(SimpleRWorker worker : workers){
 			if(!worker.isFinished()){
 				return false;
 			}

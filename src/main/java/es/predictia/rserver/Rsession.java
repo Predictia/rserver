@@ -10,16 +10,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class Rsession implements AutoCloseable {
 
 	private final RServerInstance instance;
@@ -35,7 +35,7 @@ public class Rsession implements AutoCloseable {
 		} else if (this.connection.getServerVersion() < MinRserveVersion) {
 			throw new UnsupportedOperationException("Rserver needs to be at least" + MinRserveVersion);
 		}else{
-			LOGGER.info("Created connection with {}", instance);
+			log.info("Created connection with {}", instance);
 		}
 	}
 
@@ -53,7 +53,7 @@ public class Rsession implements AutoCloseable {
 		if (StringUtils.isBlank(expression)) {
 			return null;
 		}
-		LOGGER.debug("Eval expression: {}", expression);
+		log.debug("Eval expression: {}", expression);
 		REXP e = null;
 		synchronized (connection) {
 			e = connection.parseAndEval(expression);
@@ -99,19 +99,13 @@ public class Rsession implements AutoCloseable {
 		if (localfile.exists()) {
 			localfile.delete();
 		}
-		LOGGER.debug("Transferring {} to file {}", remoteFile, localfile.getAbsolutePath());
-		InputStream is = null;
-		OutputStream os = null;
+		log.debug("Transferring {} to file {}", remoteFile, localfile.getAbsolutePath());
 		synchronized (connection) {
-			try {
-				is = new BufferedInputStream(connection.openFile(remoteFile));
-				os = new BufferedOutputStream(new FileOutputStream(localfile));
-				IOUtils.copy(is, os);
-				is.close();
-				os.close();
-			} finally {
-				IOUtils.closeQuietly(is);
-				IOUtils.closeQuietly(os);
+			try(
+				InputStream is = new BufferedInputStream(connection.openFile(remoteFile));
+				OutputStream os = new BufferedOutputStream(new FileOutputStream(localfile));
+			) {
+				is.transferTo(os);
 			}
 		}
 	}
@@ -122,7 +116,7 @@ public class Rsession implements AutoCloseable {
 	 * @param remoteFile filename to delete
 	 */
 	public void removeFile(String remoteFile) throws RserveException {
-		LOGGER.debug("Removing {}", remoteFile);
+		log.debug("Removing {}", remoteFile);
 		synchronized (connection) {
 			connection.removeFile(remoteFile);
 		}
@@ -148,19 +142,13 @@ public class Rsession implements AutoCloseable {
 		if (!localfile.exists()) {
 			throw new FileNotFoundException(localfile.getAbsolutePath());
 		}
-		LOGGER.debug("Transferring file {} to {}", localfile.getAbsolutePath(), remoteFile);
-		InputStream is = null;
-		OutputStream os = null;
+		log.debug("Transferring file {} to {}", localfile.getAbsolutePath(), remoteFile);
 		synchronized (connection) {
-			try {
-				os = new BufferedOutputStream(connection.createFile(remoteFile));
-				is = new BufferedInputStream(new FileInputStream(localfile));
-				IOUtils.copy(is, os);
-				is.close();
-				os.close();
-			} finally {
-				IOUtils.closeQuietly(is);
-				IOUtils.closeQuietly(os);
+			try(
+				OutputStream os = new BufferedOutputStream(connection.createFile(remoteFile));
+				InputStream is = new BufferedInputStream(new FileInputStream(localfile));
+			) {
+				is.transferTo(os);
 			}
 		}
 	}
@@ -170,10 +158,8 @@ public class Rsession implements AutoCloseable {
 		if (connection == null) {
 			return;
 		}
-		LOGGER.info("Closing connection with {}", instance);
+		log.info("Closing connection with {}", instance);
 		connection.close();
 	}
-	
-	private static final Logger LOGGER = LoggerFactory.getLogger(Rsession.class);
 
 }

@@ -11,30 +11,22 @@ public class RWorkerTest {
 	
 	@Test(expected=ExecutionException.class)
 	public void testClosingRWorker() throws Exception{
-		final AbstractRWorker failingWorker = new AbstractRWorker() {
-			@Override
-			protected void runWithinSession(Rsession session) throws Throwable {
-				throw new RuntimeException();
-			}
-		};
+		var failingWorker = new SimpleRWorker(session -> {throw new RuntimeException(); });
 		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
 	}
 		
 	@Test(expected=ExecutionException.class)
 	public void testFailingRWorker() throws Exception{
-		final AbstractRWorker failingWorker = new AbstractRWorker() {
-			@Override
-			protected void runWithinSession(Rsession session) throws Throwable {
-				session.eval("save()");
-			}
-		};
+		var failingWorker = new SimpleRWorker(session -> session.eval("save()"));
 		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
 	}
 	
 	@Test
 	public void testSourceRWorker() throws Exception{
-		RScriptWorker scriptWorker = new RScriptWorker();
-		scriptWorker.addLine("sessionInfo()");
+		var scriptWorker = RScript.builder()
+			.line("sessionInfo()")
+			.build()
+			.toWorker();
 		scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
 		Assert.assertFalse(scriptWorker.anyErrors());
 		Assert.assertTrue(scriptWorker.isFinished());
@@ -42,30 +34,22 @@ public class RWorkerTest {
 	
 	@Test(expected=ExecutionException.class)
 	public void testFailingSourceWorker() throws Exception{
-		RScriptWorker scriptWorker = new RScriptWorker();
-		scriptWorker.addLine("save()");
+		var scriptWorker = RScript.builder()
+			.line("save()")
+			.build()
+			.toWorker();
 		scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
 	}
 
 	@Test
 	public void testLoadPackageRWorker() throws Exception{
-		final AbstractRWorker failingWorker = new AbstractRWorker() {
-			@Override
-			protected void runWithinSession(Rsession session) throws Throwable {
-				session.loadPackage("devtools");
-			}
-		};
+		var failingWorker = new SimpleRWorker(session -> session.loadPackage("devtools"));
 		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
 	}
 	
 	@Test(expected=ExecutionException.class)
 	public void testFailingLoadPackageRWorker() throws Exception{
-		final AbstractRWorker failingWorker = new AbstractRWorker() {
-			@Override
-			protected void runWithinSession(Rsession session) throws Throwable {
-				session.loadPackage("aaklsgjalfjalsf");
-			}
-		};
+		var failingWorker = new SimpleRWorker(session -> session.loadPackage("aaklsgjalfjalsf"));
 		failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
 	}
 	

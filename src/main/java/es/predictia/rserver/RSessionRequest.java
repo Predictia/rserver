@@ -1,12 +1,13 @@
 package es.predictia.rserver;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import org.joda.time.DateTime;
+import lombok.Data;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-
+@Data
 public class RSessionRequest {
 	
 	private RSessionRequest(Integer requestedResources, 
@@ -29,41 +30,7 @@ public class RSessionRequest {
 	
 	private transient volatile RServerInstance instance;
 	
-	private transient DateTime acceptedTime, requestTime;
-	
-	public DateTime getAcceptedTime() {
-		return acceptedTime;
-	}
-	void setAcceptedTime(DateTime acceptedTime) {
-		this.acceptedTime = acceptedTime;
-	}
-	public DateTime getRequestTime() {
-		return requestTime;
-	}
-	void setRequestTime(DateTime requestTime) {
-		this.requestTime = requestTime;
-	}
-	RServerInstance getInstance() {
-		return instance;
-	}
-	void setInstance(RServerInstance instance) {
-		this.instance = instance;
-	}
-	public Integer getRequestedResources() {
-		return requestedResources;
-	}
-	public Long getRequestedTime() {
-		return requestedTime;
-	}
-	public TimeUnit getRequestedTimeUnit() {
-		return requestedTimeUnit;
-	}
-	public Long getMaxQueueTime() {
-		return maxQueueTime;
-	}
-	public TimeUnit getMaxQueueTimeUnit() {
-		return maxQueueTimeUnit;
-	}
+	private transient LocalDateTime acceptedTime, requestTime;
 	
 	public static RSessionRequest createDefaultRequest(){
 		return new Builder().createRequest();
@@ -100,21 +67,10 @@ public class RSessionRequest {
 		return "#" + this.hashCode();
 	}
 	
-	static Predicate<RSessionRequest> predicateForInstance(final RServerInstance instance){
-		return new Predicate<RSessionRequest>() {
-			@Override
-			public boolean apply(RSessionRequest input) {
-				return instance.equals(input.getInstance());
-			}
-		};
+	static Predicate<RSessionRequest> predicateForInstance(RServerInstance instance){
+		return input -> instance.equals(input.getInstance());
 	}
-	
 
-	static final Function<RSessionRequest, Integer> TO_RESOURCES_FUNCTION = new Function<RSessionRequest, Integer>() {
-		@Override
-		public Integer apply(RSessionRequest input) {
-			return input.getRequestedResources();
-		}
-	};
+	static final Function<RSessionRequest, Integer> TO_RESOURCES_FUNCTION = input -> input.getRequestedResources();
 
 }

@@ -7,10 +7,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-public class Timeouts {
+@Slf4j
+class Timeouts {
 
 	public interface AwakeningCondition{
 		public boolean wakeUp() throws Exception;
@@ -33,7 +33,7 @@ public class Timeouts {
 						Thread.sleep(sleepInterval);
 					}while(!condition.wakeUp());
 				}catch(Exception e){
-					LOGGER.warn("Exception while waiting for process: " + e.getMessage());
+					log.warn("Exception while waiting for process: " + e.getMessage());
 					return e;
 				}
 				return null;
@@ -82,6 +82,5 @@ public class Timeouts {
 			executorService.shutdownNow();
 		}
 	}
-	private static final Logger LOGGER = LoggerFactory.getLogger(Timeouts.class);
 	
 }
