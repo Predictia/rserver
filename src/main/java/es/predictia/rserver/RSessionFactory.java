@@ -30,7 +30,7 @@ public class RSessionFactory  {
 		log.debug("Searching for available instances");
 		for(RServerInstance instance : availableInstances){
 			long usedResources = sessionTasks.stream()
-				.map(SessionTasks.TO_REQUEST_FUNCTION)
+				.map(input -> input.getSessionRequest())
 				.filter(RSessionRequest.predicateForInstance(instance))
 				.mapToInt(RSessionRequest::getRequestedResources)
 				.sum();
@@ -52,7 +52,7 @@ public class RSessionFactory  {
 	
 	private void deleteOldSessions(){
 		Collection<SessionTasks> oldSessions = sessionTasks.stream()
-			.filter(SessionTasks.DONE_PREDICATE)
+			.filter(input -> input.isDone())
 			.collect(Collectors.toList());
 		if(oldSessions.isEmpty()){
 			return;

@@ -18,10 +18,10 @@ public class SimpleRWorker implements RWorker {
 	private final SessionConsumer sessionConsumer;
 	
 	public SimpleRWorker(SessionConsumer sessionConsumer) {
-		this(sessionConsumer, () -> {});
+		this(sessionConsumer, null);
 	}
 	
-	private final CloseHook close;
+	private final CloseHook closeHook;
 	
 	@FunctionalInterface
 	public static interface SessionConsumer {
@@ -64,7 +64,9 @@ public class SimpleRWorker implements RWorker {
 
 	@Override
 	public void close() throws Exception {
-		close.close();
+		if(closeHook != null) {
+			closeHook.close();
+		}
 	}
 	
 }

@@ -5,8 +5,6 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -68,24 +66,6 @@ class SessionTasks {
 		}
 	}
 	
-	public boolean isSessionConnected(){
-		Optional<Rsession> oSession = getRSession();
-		if(!oSession.isPresent()){
-			return false;
-		}
-		Rsession rsession = oSession.get();
-		if(rsession.getConnection() != null){
-			boolean result = rsession.getConnection().isConnected();
-			if(!result){
-				log.debug("Session {} is not connected", sessionRequest);
-			}
-			return result;
-		}else{
-			log.debug("Session {} has no connection attached", sessionRequest);
-			return false;
-		}
-	}
-	
 	public CompletableFuture<RWorker> launchWorker() {
 		this.sessionFuture = CompletableFuture.supplyAsync(() -> {
 			boolean first = true;
@@ -118,14 +98,6 @@ class SessionTasks {
 		}, sessionFactory.getExecutorService());
 		return this.workerFuture;
 	}
-	
-	public static Predicate<SessionTasks> predicateForRequest(final RSessionRequest rSessionRequest){
-		return input -> input.getSessionRequest().equals(rSessionRequest);
-	}
-	
-	public static final Function<SessionTasks, RSessionRequest> TO_REQUEST_FUNCTION = input -> input.getSessionRequest();
-	
-	public static final Predicate<SessionTasks> DONE_PREDICATE = input -> input.isDone();
 	
 	private static final long POLL_INTERVAL = 5000l;
 	
