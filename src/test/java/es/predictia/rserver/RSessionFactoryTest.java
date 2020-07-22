@@ -49,9 +49,9 @@ public class RSessionFactoryTest {
 		var worker2 = new SimpleRWorker(session -> session.eval("sessionInfo()"));
 		var waitWorker = waitWorker(10, TimeUnit.MINUTES);
 		RWorkers.runWithinRsession(worker1, rSessionFactory);
-		RWorkers.runWithinRsession(waitWorker, rSessionFactory, new RSessionRequest.Builder()
-			.withRequestedTime(1l, TimeUnit.SECONDS)
-			.createRequest());
+		RWorkers.runWithinRsession(waitWorker, rSessionFactory, RSessionRequest.builder()
+			.requestedTimeAndUnit(1l, TimeUnit.SECONDS)
+			.build());
 		RWorkers.runWithinRsession(worker2, rSessionFactory);
 		RWorkers.wait(5, TimeUnit.MINUTES, worker1, worker2, waitWorker);
 	}
@@ -82,9 +82,9 @@ public class RSessionFactoryTest {
 			RWorkers.runWithinRsession(waitWorker, rSessionFactory, RSessionRequest.createDefaultRequest());
 		}
 		var finalWorker = waitWorker(15, TimeUnit.SECONDS);
-		finalWorker.runAndWait(rSessionFactory, new RSessionRequest.Builder()
-			.withRequestedTime(20l, TimeUnit.SECONDS)
-			.createRequest()
+		finalWorker.runAndWait(rSessionFactory, RSessionRequest.builder()
+			.requestedTimeAndUnit(20l, TimeUnit.SECONDS)
+			.build()
 		);
 		Assert.assertTrue(finalWorker.isFinished());
 	}

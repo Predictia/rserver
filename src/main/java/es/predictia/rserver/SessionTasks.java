@@ -3,7 +3,6 @@ package es.predictia.rserver;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -27,25 +26,22 @@ class SessionTasks {
 		this.sessionRequest = sessionRequest;
 		this.worker = worker;
 		final SessionTasks sessionTasks = this;
-		this.sessionFuture = new FutureTask<Rsession>(new Callable<Rsession>() {
-			@Override
-			public Rsession call() throws Exception {
-				boolean first = true;
-				Optional<RServerInstance> availableInstance = Optional.empty();
-				Stopwatch stopwatch = Stopwatch.createStarted();
-				while(!availableInstance.isPresent()){
-					if(!first){
-						Thread.sleep(POLL_INTERVAL);
-						if(stopwatch.elapsed(sessionRequest.getMaxQueueTimeUnit()) > sessionRequest.getMaxQueueTime()){
-							throw new Exception("RSessionRequest in queue for too long");
-						}
+		this.sessionFuture = new FutureTask<Rsession>(() -> {
+			boolean first = true;
+			Optional<RServerInstance> availableInstance = Optional.empty();
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			while(!availableInstance.isPresent()){
+				if(!first){
+					Thread.sleep(POLL_INTERVAL);
+					if(stopwatch.elapsed(sessionRequest.getMaxQueueTimeUnit()) > sessionRequest.getMaxQueueTime()){
+						throw new Exception("RSessionRequest in queue for too long");
 					}
-					availableInstance = sessionFactory.getInstanceForRequest(sessionTasks);
-					first = false;
 				}
-				Rsession s = createRsession(sessionRequest);
-				return s;
+				availableInstance = sessionFactory.getInstanceForRequest(sessionTasks);
+				first = false;
 			}
+			Rsession s = createRsession(sessionRequest);
+			return s;
 		});
 		this.workerFuture = new FutureTask<RWorker>(() -> {
 				while(!sessionFuture.isDone()){

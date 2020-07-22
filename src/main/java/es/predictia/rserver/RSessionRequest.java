@@ -2,64 +2,49 @@ package es.predictia.rserver;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class RSessionRequest {
 	
-	private RSessionRequest(Integer requestedResources, 
-			Long requestedTime, TimeUnit requestedTimeUnit,
-			Long maxQueueTime, TimeUnit maxQueueTimeUnit
-		) {
-		super();
-		this.requestedResources = requestedResources;
-		this.requestedTime = requestedTime;
-		this.requestedTimeUnit = requestedTimeUnit;
-		this.maxQueueTime = maxQueueTime;
-		this.maxQueueTimeUnit = maxQueueTimeUnit;
-	}
+	@Builder.Default
+	private Integer requestedResources = 1;
 	
-	private final Integer requestedResources;
-	private final Long requestedTime;
-	private final TimeUnit requestedTimeUnit;
-	private final Long maxQueueTime;
-	private final TimeUnit maxQueueTimeUnit;
+	@Builder.Default
+	private Long requestedTime = 24l;
+	
+	@Builder.Default
+	private TimeUnit requestedTimeUnit = TimeUnit.HOURS;
+	
+	@Builder.Default
+	private Long maxQueueTime = 24l;
+	
+	@Builder.Default
+	private TimeUnit maxQueueTimeUnit = TimeUnit.HOURS;
 	
 	private transient volatile RServerInstance instance;
 	
 	private transient LocalDateTime acceptedTime, requestTime;
 	
 	public static RSessionRequest createDefaultRequest(){
-		return new Builder().createRequest();
+		return RSessionRequest.builder().build();
 	}
 	
-	public static class Builder{
-		private Integer requestedResources = 1;
-		private Long requestedTime = 24l;
-		private TimeUnit requestedTimeUnit = TimeUnit.HOURS;
-		private Long maxQueueTime = 24l;
-		private TimeUnit maxQueueTimeUnit = TimeUnit.HOURS;
+	public static class RSessionRequestBuilder{
 		
-		public Builder withRequestedResources(Integer requestedResources) {
-			this.requestedResources = requestedResources;
-			return this;
+		public RSessionRequestBuilder requestedTimeAndUnit(Long requestedTime, TimeUnit unit) {
+			return requestedTime(requestedTime)
+				.requestedTimeUnit(unit);
 		}
-		public Builder withRequestedTime(Long requestedTime, TimeUnit requestedTimeUnit) {
-			this.requestedTime = requestedTime;
-			this.requestedTimeUnit = requestedTimeUnit;
-			return this;
+		public RSessionRequestBuilder maxQueueTimeAndUnit(Long maxQueueTime, TimeUnit unit) {
+			return maxQueueTime(maxQueueTime)
+				.maxQueueTimeUnit(unit);
 		}
-		public Builder withMaxQueueTime(Long maxQueueTime, TimeUnit maxQueueTimeUnit) {
-			this.maxQueueTime = maxQueueTime;
-			this.maxQueueTimeUnit = maxQueueTimeUnit;
-			return this;
-		}
-		public RSessionRequest createRequest(){
-			return new RSessionRequest(requestedResources, requestedTime, requestedTimeUnit, maxQueueTime, maxQueueTimeUnit);
-		}
+		
 	}
 
 	@Override
@@ -70,7 +55,5 @@ public class RSessionRequest {
 	static Predicate<RSessionRequest> predicateForInstance(RServerInstance instance){
 		return input -> instance.equals(input.getInstance());
 	}
-
-	static final Function<RSessionRequest, Integer> TO_RESOURCES_FUNCTION = input -> input.getRequestedResources();
 
 }

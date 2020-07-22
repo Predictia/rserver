@@ -12,14 +12,14 @@ public class RWorkerTest {
 	@Test(expected=ExecutionException.class)
 	public void testClosingRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> {throw new RuntimeException(); })){
-			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 		
 	@Test(expected=ExecutionException.class)
 	public void testFailingRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> session.eval("save()"))){
-			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 	
@@ -29,7 +29,7 @@ public class RWorkerTest {
 			.line("sessionInfo()")
 			.build()
 			.toWorker()){
-			scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			scriptWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 			Assert.assertFalse(scriptWorker.anyErrors());
 			Assert.assertTrue(scriptWorker.isFinished());
 		}
@@ -42,21 +42,21 @@ public class RWorkerTest {
 				.line("save()")
 				.build()
 				.toWorker()){
-			scriptWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			scriptWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 
 	@Test
 	public void testLoadPackageRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("devtools"))){
-			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 	
 	@Test(expected=ExecutionException.class)
 	public void testFailingLoadPackageRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("aaklsgjalfjalsf"))){
-			failingWorker.runAndWait(new RSessionFactory(), new RSessionRequest.Builder().createRequest());
+			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 	
