@@ -1,7 +1,7 @@
 package es.predictia.rserver;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 /** Runs {@link RWorker} objects using a {@link RSessionFactory}
@@ -12,15 +12,15 @@ class RWorkers {
 
 	/** Runs {@link RWorker} worker within session using a {@link RSessionRequest#createDefaultRequest()}
 	 */
-	public static FutureTask<RWorker> runWithinRsession(RWorker worker, RSessionFactory sessionFactory) throws Exception {
+	public static CompletableFuture<RWorker> runWithinRsession(RWorker worker, RSessionFactory sessionFactory) throws Exception {
 		return runWithinRsession(worker, sessionFactory, RSessionRequest.createDefaultRequest());
 	}
 	
 	/** Runs {@link RWorker} worker within R session provided by the {@link RSessionFactory} 
 	 */
-	public static FutureTask<RWorker> runWithinRsession(RWorker worker, RSessionFactory sessionFactory, RSessionRequest sessionRequest) throws Exception {
+	public static CompletableFuture<RWorker> runWithinRsession(RWorker worker, RSessionFactory sessionFactory, RSessionRequest sessionRequest) throws Exception {
 		SessionTasks sessionTasks = new SessionTasks(sessionRequest, worker, sessionFactory);
-		return sessionTasks.launchWorker(sessionFactory.getExecutorService());
+		return sessionTasks.launchWorker();
 	}
 	
 	/** Waits from the time of invocation for all the workers to finish, with a timeout

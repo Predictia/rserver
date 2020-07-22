@@ -44,7 +44,6 @@ public class RSessionFactory  {
 		return Optional.empty();
 	}
 
-	
 	private void expireSessions(){
 		for(SessionTasks iSessionTasks : sessionTasks){
 			iSessionTasks.cancelExpiredWorker();

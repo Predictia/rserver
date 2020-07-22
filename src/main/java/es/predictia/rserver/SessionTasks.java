@@ -3,73 +3,29 @@ package es.predictia.rserver;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.rosuda.REngine.Rserve.RserveException;
-
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@RequiredArgsConstructor
+@Data
 @Slf4j
 class SessionTasks {
 	
 	private final RSessionRequest sessionRequest;
 	private final RWorker worker;
-	private final FutureTask<Rsession> sessionFuture;
-	private final FutureTask<RWorker> workerFuture;
+	private final RSessionFactory sessionFactory;
 	
-	public SessionTasks(final RSessionRequest sessionRequest, final RWorker worker, final RSessionFactory sessionFactory) {
-		super();
-		this.sessionRequest = sessionRequest;
-		this.worker = worker;
-		final SessionTasks sessionTasks = this;
-		this.sessionFuture = new FutureTask<Rsession>(() -> {
-			boolean first = true;
-			Optional<RServerInstance> availableInstance = Optional.empty();
-			Stopwatch stopwatch = Stopwatch.createStarted();
-			while(!availableInstance.isPresent()){
-				if(!first){
-					Thread.sleep(POLL_INTERVAL);
-					if(stopwatch.elapsed(sessionRequest.getMaxQueueTimeUnit()) > sessionRequest.getMaxQueueTime()){
-						throw new Exception("RSessionRequest in queue for too long");
-					}
-				}
-				availableInstance = sessionFactory.getInstanceForRequest(sessionTasks);
-				first = false;
-			}
-			Rsession s = createRsession(sessionRequest);
-			return s;
-		});
-		this.workerFuture = new FutureTask<RWorker>(() -> {
-				while(!sessionFuture.isDone()){
-					Thread.sleep(POLL_INTERVAL);
-				}
-				Rsession rsession = sessionFuture.get();
-				try {
-					worker.run(rsession);
-				} catch (Throwable e) {
-					throw new RuntimeException(e);
-				}
-				return worker;
-			});
-	}
-
-	private Rsession createRsession(RSessionRequest sessionRequest) throws RserveException{
-		final Rsession s = new Rsession(sessionRequest.getInstance());
-		return s;
-	}
+	private CompletableFuture<Rsession> sessionFuture;
+	private CompletableFuture<RWorker> workerFuture;
 
 	public boolean isDone(){
-		if(sessionFuture == null){
-			return false;
-		}else if(workerFuture == null){
-			return false;
-		}else{
-			return sessionFuture.isDone() && workerFuture.isDone();
-		}
+		return workerFuture != null && workerFuture.isDone();
 	}
 	
 	public boolean cancelExpiredWorker(){
@@ -129,30 +85,45 @@ class SessionTasks {
 			return false;
 		}
 	}
-
-	public RSessionRequest getSessionRequest() {
-		return sessionRequest;
-	}
-	public RWorker getWorker() {
-		return worker;
-	}
 	
-	public FutureTask<RWorker> launchWorker(ExecutorService executorService) {
-		executorService.submit(this.sessionFuture);
-		executorService.submit(this.workerFuture);
-		return workerFuture;
+	public CompletableFuture<RWorker> launchWorker() {
+		this.sessionFuture = CompletableFuture.supplyAsync(() -> {
+			boolean first = true;
+			Optional<RServerInstance> availableInstance = Optional.empty();
+			Stopwatch stopwatch = Stopwatch.createStarted();
+			try {
+				while(!availableInstance.isPresent()){
+					if(!first){
+						Thread.sleep(POLL_INTERVAL);
+						if(stopwatch.getDuration().toSeconds() > TimeUnit.SECONDS.convert(sessionRequest.getMaxQueueTime(), sessionRequest.getMaxQueueTimeUnit())){
+							throw new Exception("RSessionRequest in queue for too long");
+						}
+					}
+					availableInstance = sessionFactory.getInstanceForRequest(this);
+					first = false;
+				}
+				return new Rsession(sessionRequest.getInstance());
+			}catch (Exception e) {
+				log.warn("Error while creating session", e);
+				throw new RuntimeException(e);
+			}
+		}, sessionFactory.getExecutorService());
+		this.workerFuture = sessionFuture.thenApplyAsync(rsession -> {
+			try {
+				worker.run(rsession);
+				return worker;
+			} catch (Throwable e) {
+				throw new RuntimeException(e);
+			}
+		}, sessionFactory.getExecutorService());
+		return this.workerFuture;
 	}
 	
 	public static Predicate<SessionTasks> predicateForRequest(final RSessionRequest rSessionRequest){
 		return input -> input.getSessionRequest().equals(rSessionRequest);
 	}
 	
-	public static final Function<SessionTasks, RSessionRequest> TO_REQUEST_FUNCTION = new Function<SessionTasks, RSessionRequest>() {
-		@Override
-		public RSessionRequest apply(SessionTasks input) {
-			return input.getSessionRequest();
-		}
-	};
+	public static final Function<SessionTasks, RSessionRequest> TO_REQUEST_FUNCTION = input -> input.getSessionRequest();
 	
 	public static final Predicate<SessionTasks> DONE_PREDICATE = input -> input.isDone();
 	

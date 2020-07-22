@@ -26,19 +26,16 @@ class Timeouts {
 	 * @throws ExecutionException
 	 */
 	public static void sleepWithTimeOut(final long sleepInterval, final AwakeningCondition condition, long timeOut, TimeUnit timeOutUnit) throws InterruptedException, ExecutionException{
-		Exception e = Timeouts.callWithTimeOut(new Callable<Exception>() {
-			@Override
-			public Exception call() throws Exception {
-				try{
-					do{
-						Thread.sleep(sleepInterval);
-					}while(!condition.wakeUp());
-				}catch(Exception e){
-					log.warn("Exception while waiting for process: " + e.getMessage());
-					return e;
-				}
-				return null;
+		Exception e = Timeouts.callWithTimeOut(() -> {
+			try{
+				do{
+					Thread.sleep(sleepInterval);
+				}while(!condition.wakeUp());
+			}catch(Exception ex){
+				log.warn("Exception while waiting for process: " + ex.getMessage());
+				return ex;
 			}
+			return null;
 		}, timeOut, timeOutUnit);
 		if(e instanceof InterruptedException){
 			throw (InterruptedException) e;

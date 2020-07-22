@@ -9,14 +9,14 @@ import org.junit.Test;
 @Ignore("necesita R con paquete RServer instalado en local")
 public class RWorkerTest {
 	
-	@Test(expected=ExecutionException.class)
+	@Test(expected = ExecutionException.class)
 	public void testClosingRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> {throw new RuntimeException(); })){
 			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 		
-	@Test(expected=ExecutionException.class)
+	@Test(expected = ExecutionException.class)
 	public void testFailingRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> session.eval("save()"))){
 			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
@@ -36,7 +36,7 @@ public class RWorkerTest {
 		
 	}
 	
-	@Test(expected=ExecutionException.class)
+	@Test(expected = ExecutionException.class)
 	public void testFailingSourceWorker() throws Exception{
 		try(var scriptWorker = RScript.builder()
 				.line("save()")
@@ -48,12 +48,12 @@ public class RWorkerTest {
 
 	@Test
 	public void testLoadPackageRWorker() throws Exception{
-		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("devtools"))){
+		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("Rserve"))){
 			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 	
-	@Test(expected=ExecutionException.class)
+	@Test(expected = ExecutionException.class)
 	public void testFailingLoadPackageRWorker() throws Exception{
 		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("aaklsgjalfjalsf"))){
 			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());

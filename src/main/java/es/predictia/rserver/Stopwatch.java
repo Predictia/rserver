@@ -2,7 +2,6 @@ package es.predictia.rserver;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +15,6 @@ class Stopwatch {
 		return new Stopwatch(Instant.now());
 	}
 
-	public Long elapsed(TimeUnit unit) {
-		return getDuration().get(unit.toChronoUnit());
-	}
-	
 	public Duration getDuration() {
 		return Duration.between(start, Instant.now());
 	}

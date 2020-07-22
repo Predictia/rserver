@@ -30,7 +30,7 @@ public class RSessionFactoryTest {
 		return rSessionFactory;
 	}
 	
-	@Test(expected=InterruptedException.class)
+	@Test(expected = InterruptedException.class)
 	public void testUnfinishedDefaultSessionRequest() throws Exception{
 		RSessionFactory rSessionFactory = defaultRSessionFactory();
 		var worker1 = new SimpleRWorker(session -> session.eval("sessionInfo()"));
@@ -42,7 +42,7 @@ public class RSessionFactoryTest {
 		RWorkers.wait(15, TimeUnit.SECONDS, worker1, worker2, waitWorker);
 	}
 
-	@Test
+	@Test(expected = InterruptedException.class)
 	public void testExpiringSessionRequest() throws Exception{
 		RSessionFactory rSessionFactory = defaultRSessionFactory();
 		var worker1 = new SimpleRWorker(session -> session.eval("sessionInfo()"));
