@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -42,7 +43,7 @@ public class RSessionFactoryTest {
 		RWorkers.wait(15, TimeUnit.SECONDS, worker1, worker2, waitWorker);
 	}
 
-	@Test(expected = InterruptedException.class)
+	@Test(expected = TimeoutException.class)
 	public void testExpiringSessionRequest() throws Exception{
 		RSessionFactory rSessionFactory = defaultRSessionFactory();
 		var worker1 = new SimpleRWorker(session -> session.eval("sessionInfo()"));

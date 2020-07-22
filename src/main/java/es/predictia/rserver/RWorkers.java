@@ -3,6 +3,9 @@ package es.predictia.rserver;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** Runs {@link RWorker} objects using a {@link RSessionFactory}
  * @author Max
@@ -30,11 +33,25 @@ class RWorkers {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	static void wait(long time, TimeUnit unit, final SimpleRWorker... workers) throws InterruptedException, ExecutionException{
+	static void wait(long time, TimeUnit unit, final SimpleRWorker... workers) throws TimeoutException, InterruptedException, ExecutionException {
 		if(workers == null) return;
 		if(allFinished(workers)) return;
-		Timeouts.sleepWithTimeOut(1000, () -> allFinished(workers), time, unit);
+		var waiters = Stream.of(workers)
+			.map(worker -> CompletableFuture.runAsync(() -> {
+				while(!worker.isFinished()) {
+					try{
+						Thread.sleep(5000l);
+					}catch(InterruptedException ex){
+						return;
+					}
+				}
+			}))
+			.collect(Collectors.toList());
+		CompletableFuture
+			.allOf(waiters.toArray(s -> new CompletableFuture[s]))
+			.get(time, unit);
 	}
+	
 	
 	private static boolean allFinished(RWorker... workers){
 		for(var worker : workers){
