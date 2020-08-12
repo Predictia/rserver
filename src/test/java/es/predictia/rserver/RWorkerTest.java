@@ -48,8 +48,8 @@ public class RWorkerTest {
 
 	@Test
 	public void testLoadPackageRWorker() throws Exception{
-		try(var failingWorker = new SimpleRWorker(session -> session.loadPackage("Rserve"))){
-			failingWorker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
+		try(var worker = new SimpleRWorker(session -> session.loadPackage("Rserve"))){
+			worker.runAndWait(new RSessionFactory(), RSessionRequest.createDefaultRequest());
 		}
 	}
 	

@@ -3,12 +3,14 @@ package es.predictia.rserver;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** Runs R code and then closes the session
  * @author Max
  *
  */
 @RequiredArgsConstructor
+@Slf4j
 public class SimpleRWorker implements RWorker {
 
 	private final AtomicBoolean isStarted = new AtomicBoolean(false),
@@ -39,6 +41,7 @@ public class SimpleRWorker implements RWorker {
 		try{
 			sessionConsumer.runWithinSession(session);
 		}catch(Throwable e){
+			log.warn("Error in RWorker: {}", e.getMessage());
 			this.anyErrors.set(true);
 			throw e;
 		}finally{
