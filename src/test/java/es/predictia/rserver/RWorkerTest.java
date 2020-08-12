@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore("necesita R con paquete RServer instalado en local")
+//@Ignore("necesita R con paquete RServer instalado en local")
 public class RWorkerTest {
 	
 	@Test(expected = ExecutionException.class)
